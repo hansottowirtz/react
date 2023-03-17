@@ -2,7 +2,7 @@ name: Commit Artifacts for Facebook WWW
 
 on:
   push:
-    branches: [main]
+    branches: [main, lt/debug-difftrain]
 
 jobs:
   download_artifacts:
@@ -83,6 +83,7 @@ jobs:
               try {
                 const res = await fetch(artifactsUrl);
                 const data = await res.json();
+                console.log(data);
                 for (const artifact of data) {
                   if (artifact.path === 'build.tgz') {
                     console.log(`Downloading and unzipping ${artifact.url}`);
@@ -138,37 +139,37 @@ jobs:
           name: compiled
           path: compiled/
 
-  commit_artifacts:
-    needs: download_artifacts
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          ref: builds/facebook-www
-      - name: Ensure clean directory
-        run: rm -rf compiled
-      - uses: actions/download-artifact@v3
-        with:
-          name: compiled
-          path: compiled/
-      - run: git status -u
-      - name: Check if only the REVISION file has changed
-        id: check_should_commit
-        run: |
-          if git status --porcelain | grep -qv '/REVISION$'; then
-            echo "should_commit=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "should_commit=false" >> "$GITHUB_OUTPUT"
-          fi
-      - name: Commit changes to branch
-        if: steps.check_should_commit.outputs.should_commit == 'true'
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: |
-            ${{ github.event.head_commit.message }}
+  # commit_artifacts:
+  #   needs: download_artifacts
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #       with:
+  #         ref: builds/facebook-www
+  #     - name: Ensure clean directory
+  #       run: rm -rf compiled
+  #     - uses: actions/download-artifact@v3
+  #       with:
+  #         name: compiled
+  #         path: compiled/
+  #     - run: git status -u
+  #     - name: Check if only the REVISION file has changed
+  #       id: check_should_commit
+  #       run: |
+  #         if git status --porcelain | grep -qv '/REVISION$'; then
+  #           echo "should_commit=true" >> "$GITHUB_OUTPUT"
+  #         else
+  #           echo "should_commit=false" >> "$GITHUB_OUTPUT"
+  #         fi
+  #     - name: Commit changes to branch
+  #       if: steps.check_should_commit.outputs.should_commit == 'true'
+  #       uses: stefanzweifel/git-auto-commit-action@v4
+  #       with:
+  #         commit_message: |
+  #           ${{ github.event.head_commit.message }}
 
-            DiffTrain build for [${{ github.sha }}](https://github.com/facebook/react/commit/${{ github.sha }})
-          branch: builds/facebook-www
-          commit_user_name: ${{ github.actor }}
-          commit_user_email: ${{ github.actor }}@users.noreply.github.com
-          create_branch: true
+  #           DiffTrain build for [${{ github.sha }}](https://github.com/facebook/react/commit/${{ github.sha }})
+  #         branch: builds/facebook-www
+  #         commit_user_name: ${{ github.actor }}
+  #         commit_user_email: ${{ github.actor }}@users.noreply.github.com
+  #         create_branch: true
