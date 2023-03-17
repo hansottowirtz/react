@@ -80,15 +80,22 @@ jobs:
               await sleep(60_000);
             }
             if (artifactsUrl != null) {
-              const res = await fetch(artifactsUrl);
-              const data = await res.json();
-              for (const artifact of data) {
-                if (artifact.path === 'build.tgz') {
-                  console.log(`Downloading and unzipping ${artifact.url}`);
-                  await execHelper(
-                    `curl -L ${artifact.url} | tar -xvz`
-                  );
+              try {
+                const res = await fetch(artifactsUrl);
+                const data = await res.json();
+                for (const artifact of data) {
+                  if (artifact.path === 'build.tgz') {
+                    console.log(`Downloading and unzipping ${artifact.url}`);
+                    await execHelper(
+                      `curl -L ${artifact.url} | tar -xvz`
+                    );
+                  }
                 }
+              } catch (error) {
+                if (error.name === 'AbortError') {
+                  console.error(error);
+                }
+                throw error;
               }
             } else {
               process.exitCode = 1;
